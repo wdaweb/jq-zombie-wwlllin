@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Save the Ocean</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: darkcyan;
+    }
+
+    #bar {
+      width: 50vw;
+      height: 15vh;
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      background-image: url('./materials/whale.png');
+      background-size: 40vw 25vh;
+      background-repeat: no-repeat;
+      background-position: top;
+      color: whitesmoke;
+      font-size: large;
+      font-weight: 1000;
+      margin-bottom: 10px;
+    }
+
+    #btn-start {
+      background: darkblue;
+      color: aliceblue;
+      margin-bottom: 10px;
+    }
+
+    #game {
+      width: 60vw;
+      height: 70vh;
+      background-image: url(./materials/bg.jpg);
+      background-repeat: no-repeat;
+      background-size: cover;
+      position: relative;
+      overflow: hidden;
+      cursor: url(./materials/cursor.png) 50 50, auto;
+    }
+
+    #game>img {
+      height: 100px;
+      position: absolute;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="bar">
+    <p>分數: <span id="text-score">0</span></p>
+    <p>剩餘: <span id="text-time">0</span>s</p>
+    <p>最高分玩家: <span id="text-hsname">-</span></p>
+    <p>最高分分數: <span id="text-hsscore">0</span></p>
+    <input type="button" value="Save the Ocean" id="btn-start">
+  </div>
+  <div id="game"></div>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.all.min.js'
+    integrity='sha512-zB7yJLSASiSevQmWCrQaq+z/f5zRIa884hwWgmK1oI3MfolIzKcpDtyfBsrGqUi/hMCObVwr/+SZTByOqh0zkQ=='
+    crossorigin='anonymous'></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js'
+    integrity='sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=='
+    crossorigin='anonymous'></script>
+  <script>
+    let score = 0;
+    let time = 0;
+    let timer = 0;
+    const hs = {
+      name: '-',
+      score: 0
+    }
+    if (localStorage.hs) {
+      const data = JSON.parse(localStorage.hs)
+      hs.name = data.name
+      hs.score = data.score
+      $('#text-hsname').text(hs.name)
+      $('#text-hsscore').text(hs.score)
+    }
+
+    $('#btn-start').click(function () {
+      $(this).attr('disabled', true)
+      score = 0
+      $('#text-score').text(score)
+      time = 20
+      $('#text-time').text(time)
+      const _this = this
+      timer = setInterval(function () {
+        time--
+        $('#text-time').text(time)
+        
+        const random = Math.ceil(Math.random() * 10)
+        if (random > 2 && $('.trash').length < 20) {
+
+          const top = Math.round(Math.random() * 100) + '%'
+          const left = Math.round(Math.random() * 100) + '%'
+
+          const randomT = Math.ceil(Math.random() * 6)
+          const trash = $(`<img src='./materials/g${randomT}.png' class="trash" style="top: ${top}; left: ${left}">`)
+          $('#game').append(trash)
+          moveTrash(trash)
+        }
+
+        if (time === 0) {
+          clearInterval(timer)
+          $(_this).attr('disabled', false)
+          $('#game').empty()
+
+          if (score > hs.score) {
+            Swal.fire({
+              icon: 'success',
+              title: `Time's up`,
+              text: `謝謝你的努力，清除了 ${score} 個海洋垃圾`,
+
+              input: 'text',
+              inputAttributes: {
+                required: true
+              },
+              inputPlaceholder: '請輸入你的名字',
+              validationMessage: '請輸入你的名字',
+              allowOutsideClick: false,
+
+              allowEscapeKey: false
+            }).then(function (result) {
+              hs.score = score
+              hs.name = result.value
+              $('#text-hsname').text(hs.name)
+              $('#text-hsscore').text(hs.score)
+              localStorage.hs = JSON.stringify(hs)
+            })
+          } else {
+            Swal.fire({
+              title: 'Thank you for helping to protect our oceans !',
+              text: `你清除了 ${score} 個海洋垃圾`,
+              imageUrl: 'https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTGNDNfionVrgBDBYnNWu7Rpmchl2rD54aLU0r38jB6yhbM0jTD',
+              imageWidth: 200,
+              imageHeight: 200,
+              imageAlt: "Stop plastic pollution !"
+            });
+          }
+        }
+      }, 1000)
+    })
+    
+    $('#game').on('click', '.trash', function () {
+      $(this).stop().fadeOut(50, 0)
+      if ($(this).attr('src') === `./materials/g1.png`) {
+        score+=4;
+      } else if ($(this).attr('src') === `./materials/g2.png`){
+        score+=3;
+      } else if ($(this).attr('src') === `./materials/g3.png`){
+        score+=2;
+      }else {
+        score++
+      }
+      $('#text-score').text(score)
+    })
+
+    function moveTrash(trash) {
+      const top = Math.round(Math.random() * 100) + '%'
+      const left = Math.round(Math.random() * 100) + '%'
+      trash.animate({ top, left }, 3000, function () {
+        moveTrash(trash)
+      })
+    }
+
+  </script>
+
+</body>
+
+</html>
